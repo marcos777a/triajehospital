@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triaje hospitalario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Triaje hospitalario</h1>
+    <p>Motor de inferencia en SWI-Prolog</p>
+  </header>
+
+  <div class="toolbar">
+    <button class="run" id="consultar" type="button">Consultar estado</button>
+    <span id="estado" role="status" aria-live="polite"></span>
+  </div>
+
+  <section id="resumen" aria-label="Resumen por nivel de prioridad"></section>
+  <section id="resultados" aria-label="Pacientes"></section>
+</main>
+
+<script>
+const API_URL = 'http://127.0.0.1:8000/evaluar_todos';
+
+const NIVELES = [
+  { id: 'critico',     nombre: 'Crítico' },
+  { id: 'urgente',     nombre: 'Urgente' },
+  { id: 'prioritario', nombre: 'Prioritario' },
+  { id: 'leve',        nombre: 'Leve' },
+  { id: 'otro',        nombre: 'Sin clasificar' }
+];
+
+// Cada alerta que devuelve Prolog -> nivel, texto legible y orden de atención
+const ALERTAS = {
+  urgencias_prioritarias_sin_cama: { nivel: 'critico',     texto: 'Urgencias prioritarias, sin cama', orden: 0 },
+  urgencias_con_cama:              { nivel: 'critico',     texto: 'Urgencias, con cama',              orden: 1 },
+  evaluacion_urgente:              { nivel: 'urgente',     texto: 'Evaluación urgente',               orden: 2 },
+  evaluacion_prioritaria:          { nivel: 'prioritario', texto: 'Evaluación prioritaria',           orden: 3 },
+  sala_espera_o_ambulatorio:       { nivel: 'leve',        texto: 'Sala de espera o ambulatorio',     orden: 4 }
+};
+
+const $ = id => document.getElementById(id);
+let pacientes = [];
+let filtro = null;
+
+function el(tag, attrs = {}, ...hijos) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  hijos.forEach(h => e.append(h));
+  return e;
+}
+
+function infoAlerta(alerta) {
+  if (ALERTAS[alerta]) return ALERTAS[alerta];
+  const texto = String(alerta).replace(/_/g, ' ');
+  return { nivel: 'otro', texto: texto.charAt(0).toUpperCase() + texto.slice(1), orden: 99 };
+}
+
+function mostrarAviso(titulo, detalle, esError = false) {
+  $('resumen').replaceChildren();
+  const aviso = el('div', { class: 'aviso' + (esError ? ' error' : '') });
+  if (detalle) {
+    aviso.append(el('strong', {}, titulo), detalle);
+  } else {
+    aviso.append(titulo);
+  }
+  $('resultados').replaceChildren(aviso);
+}
+
+function render() {
+  const conteo = Object.fromEntries(NIVELES.map(n => [n.id, 0]));
+  pacientes.forEach(p => conteo[p.info.nivel]++);
+
+  // barra proporcional + filtros
+  const barra = el('div', { class: 'barra', 'aria-hidden': 'true' });
+  const filtros = el('div', { class: 'filtros' });
+  NIVELES.forEach(n => {
+    const c = conteo[n.id];
+    if (n.id === 'otro' && c === 0) return;
+    if (c > 0) {
+      const seg = el('span', { class: `n-${n.id}`, title: `${n.nombre}: ${c}` });
+      seg.style.flex = c;
+      barra.append(seg);
+    }
+    filtros.append(el('button', {
+      class: `filtro n-${n.id}`, type: 'button', 'data-id': n.id,
+      'aria-pressed': String(filtro === n.id),
+      ...(c === 0 ? { disabled: '' } : {}),
+      onclick: () => {
+        filtro = filtro === n.id ? null : n.id;
+        render();
+        $('resumen').querySelector(`[data-id="${n.id}"]`)?.focus();
+      }
+    }, el('span', { class: 'cuenta' }, String(c)), el('span', { class: 'nombre' }, n.nombre)));
+  });
+  $('resumen').replaceChildren(barra, filtros);
+
+  // lista ordenada por urgencia
+  const visibles = pacientes
+    .filter(p => !filtro || p.info.nivel === filtro)
+    .sort((a, b) => a.info.orden - b.info.orden || a.nombre.localeCompare(b.nombre, 'es'));
+
+  const lista = el('ul', { class: 'lista' });
+  visibles.forEach(p => {
+    const nivel = NIVELES.find(n => n.id === p.info.nivel);
+    lista.append(el('li', { class: `fila n-${p.info.nivel}` },
+      el('span', { class: 'nombre' }, p.nombre),
+      el('span', { class: 'destino' }, p.info.texto),
+      el('span', { class: 'nivel' }, nivel.nombre)
+    ));
+  });
+  $('resultados').replaceChildren(lista);
+
+  const hora = new Date().toLocaleTimeString('es-MX');
+  const total = pacientes.length;
+  $('estado').textContent = filtro
+    ? `Mostrando ${visibles.length} de ${total} pacientes. Actualizado a las ${hora}.`
+    : `${total} ${total === 1 ? 'paciente' : 'pacientes'}. Actualizado a las ${hora}.`;
+}
+
+async function cargar() {
+  const btn = $('consultar');
+  btn.disabled = true;
+  btn.textContent = 'Consultando…';
+  $('estado').textContent = '';
+  mostrarAviso('Ejecutando el motor lógico…');
+
+  try {
+    const respuesta = await fetch(API_URL);
+    if (!respuesta.ok) throw new Error(`El servidor respondió con el código ${respuesta.status}.`);
+    const datos = await respuesta.json();
+    if (datos.estado !== 'exito') {
+      throw new Error(datos.mensaje || 'El motor lógico no devolvió resultados.');
+    }
+
+    filtro = null;
+    pacientes = (datos.resultados || []).map(r => ({
+      nombre: String(r.paciente).replace(/_/g, ' '),
+      info: infoAlerta(r.alerta_medica)
+    }));
+
+    if (pacientes.length === 0) {
+      mostrarAviso('Sin pacientes', 'El servidor respondió bien, pero no hay pacientes para evaluar.');
+    } else {
+      render();
+    }
+  } catch (error) {
+    pacientes = [];
+    const sinConexion = error instanceof TypeError;
+    mostrarAviso(
+      sinConexion ? 'No se pudo conectar con el servidor' : 'Error al consultar el hospital',
+      sinConexion
+        ? 'Revisa que Uvicorn esté corriendo en 127.0.0.1:8000 y vuelve a consultar.'
+        : error.message,
+      true
+    );
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Consultar estado';
+  }
+}
+
+$('consultar').addEventListener('click', cargar);
+cargar();
+</script>
+</body>
+</html>

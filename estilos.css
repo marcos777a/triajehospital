@@ -1,0 +1,253 @@
+/* ==========================================================
+   Triaje hospitalario - tema blanco
+   Para cambiar colores o fuentes, edita solo las variables.
+   ========================================================== */
+
+:root {
+  /* base */
+  --bg: #ffffff;
+  --surface: #f6f8fa;
+  --surface-2: #eef2f6;
+  --line: #e1e7ed;
+  --text: #17212b;
+  --muted: #5b6b7b;
+  --accent: #0f6e8c;
+  --accent-hover: #0c5a73;
+
+  /* niveles de triaje */
+  --critico: #d93025;
+  --urgente: #e8710a;
+  --prioritario: #f2b01e;
+  --leve: #1e9e62;
+  --otro: #8493a3;
+
+  /* tipografía */
+  --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
+  --sans: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+
+  --radio: 8px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 16px/1.5 var(--sans);
+}
+
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 20px 72px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Encabezado ---------- */
+
+header h1 {
+  font: 700 1.9rem/1.2 var(--mono);
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+
+header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* ---------- Barra de acciones ---------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 28px 0 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.run {
+  font: 600 0.95rem var(--sans);
+  color: #ffffff;
+  background: var(--accent);
+  border: 0;
+  border-radius: var(--radio);
+  padding: 11px 22px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.run:hover:not(:disabled) { background: var(--accent-hover); }
+.run:disabled { opacity: 0.6; cursor: progress; }
+
+#estado {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ---------- Niveles (una variable --c por nivel) ---------- */
+
+.n-critico     { --c: var(--critico); }
+.n-urgente     { --c: var(--urgente); }
+.n-prioritario { --c: var(--prioritario); }
+.n-leve        { --c: var(--leve); }
+.n-otro        { --c: var(--otro); }
+
+/* ---------- Resumen ---------- */
+
+.barra {
+  display: flex;
+  gap: 3px;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.barra span {
+  background: var(--c);
+  min-width: 6px;
+}
+
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.filtro {
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--c);
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.filtro:hover:not(:disabled) { background: var(--surface); }
+
+.filtro[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--c) 10%, white);
+  border-color: var(--c);
+}
+
+.filtro:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.filtro .cuenta {
+  display: block;
+  font: 700 1.6rem/1.1 var(--mono);
+}
+
+.filtro .nombre {
+  display: block;
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-top: 2px;
+}
+
+/* ---------- Lista de pacientes ---------- */
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 2fr auto;
+  gap: 16px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--c);
+  border-radius: var(--radio);
+  padding: 14px 16px;
+}
+
+.fila .nombre {
+  font: 700 1rem var(--mono);
+  text-transform: capitalize;
+  overflow-wrap: anywhere;
+}
+
+.fila .destino { color: var(--text); }
+
+.fila .nivel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c) 14%, white);
+}
+
+.fila .nivel::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c);
+}
+
+/* ---------- Mensajes (carga, vacío, error) ---------- */
+
+.aviso {
+  border: 1px dashed var(--line);
+  border-radius: var(--radio);
+  padding: 18px 20px;
+  color: var(--muted);
+  background: var(--surface);
+}
+
+.aviso strong {
+  display: block;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.aviso.error {
+  border: 1px solid var(--critico);
+  color: var(--text);
+  background: color-mix(in srgb, var(--critico) 7%, white);
+}
+
+/* ---------- Responsive y preferencias ---------- */
+
+@media (max-width: 600px) {
+  main { padding-top: 32px; }
+  .fila {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    justify-items: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+@media print {
+  .toolbar { display: none; }
+  .fila, .filtro { break-inside: avoid; }
+}
