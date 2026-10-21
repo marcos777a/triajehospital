@@ -8,7 +8,7 @@ paciente(p001, 23).
 paciente(p002, 70).
 paciente(p003, 3).
 paciente(p004, 35).
-paciente(p005, 68).
+paciente(p005, 28).
 
 
 % Síntomas registrados por paciente.
@@ -16,7 +16,7 @@ presenta(p001, dolor_cabeza_leve).
 presenta(p002, dolor_pecho_intenso).
 presenta(p003, dificultad_respirar).
 presenta(p004, estornudos).
-presenta(p005, dificultad_respirar).
+presenta(p005, tos_leve).
 
 % Clasificación de síntomas.
 sintoma_critico(dolor_pecho_intenso).
