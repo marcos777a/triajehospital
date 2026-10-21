@@ -9,6 +9,11 @@ paciente(p002, 70).
 paciente(p003, 3).
 paciente(p004, 35).
 paciente(p005, 28).
+paciente(p006, 75).
+paciente(p007, 2).
+paciente(p008, 40).
+paciente(p009, 25).
+paciente(p010, 50).
 
 
 % Síntomas registrados por paciente.
@@ -17,6 +22,11 @@ presenta(p002, dolor_pecho_intenso).
 presenta(p003, dificultad_respirar).
 presenta(p004, estornudos).
 presenta(p005, tos_leve).
+presenta(p006, tos_leve).
+presenta(p007, moqueo_nasal).
+presenta(p008, dolor_moderado).
+presenta(p009, fiebre_moderada).
+presenta(p010, sangrado_incontrolable).
 
 % Clasificación de síntomas.
 sintoma_critico(dolor_pecho_intenso).

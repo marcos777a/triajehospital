@@ -1,0 +1,3 @@
+git add triaje.pl
+git commit -m "mmm paciente 5 cambio"
+git push
