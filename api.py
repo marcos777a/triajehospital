@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pyswip import Prolog
 
@@ -14,6 +15,14 @@ app.add_middleware(
 prolog = Prolog()
 prolog.consult("triaje.pl")
 
+@app.get("/")
+def mostrar_pagina():
+    return FileResponse("triaje.html")
+
+@app.get("/estilos.css")
+def mostrar_estilos():
+    return FileResponse("estilos.css")
+    
 @app.get("/evaluar_todos")
 def evaluar_todos():
     try:
