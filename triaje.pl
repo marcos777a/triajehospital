@@ -28,7 +28,7 @@ presenta(p007, moqueo_nasal).
 presenta(p008, dolor_moderado).
 presenta(p009, fiebre_moderada).
 presenta(p010, sangrado_incontrolable).
-paciente(p0100, dolor_cabeza_leve).
+presenta(p0100, dolor_cabeza_leve).
 
 % Clasificación de síntomas.
 sintoma_critico(dolor_pecho_intenso).
